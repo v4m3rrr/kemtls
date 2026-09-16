@@ -17,7 +17,7 @@
 #include "codes.h"
 #include "sig_algo.h"
 
-union KeyUni {
+union key_impl {
 	RsaKey rsa;
 	ecc_key ecc;
 	ed25519_key ed25519;
@@ -25,7 +25,7 @@ union KeyUni {
 	wc_MlDsaKey mldsa;
 	SlhDsaKey slhdsa;
 	falcon_key falcon;
-};
+} key;
 
 static int gen_falcon_key(falcon_key *gen_key, int level)
 {
@@ -482,88 +482,88 @@ err:
 	return ret;
 }
 
-int gen_key(int sig_algo_type, union KeyUni *key)
+int gen_key(struct KeyUni key)
 {
 	int ret;
 
-	switch (sig_algo_type) {
+	switch (key.type) {
 	case SIG_ALGO_RSA_2048:
-		ret = gen_rsa_key(&key->rsa, 2048);
+		ret = gen_rsa_key(&key.key->rsa, 2048);
 		break;
 	case SIG_ALGO_RSA_4096:;
-		ret = gen_rsa_key(&key->rsa, 4096);
+		ret = gen_rsa_key(&key.key->rsa, 4096);
 		break;
 	case SIG_ALGO_RSA_8192:;
-		ret = gen_rsa_key(&key->rsa, 8192);
+		ret = gen_rsa_key(&key.key->rsa, 8192);
 		break;
 	case SIG_ALGO_ECC_SECP224R1:
-		ret = gen_ecc_key(&key->ecc, ECC_SECP224R1);
+		ret = gen_ecc_key(&key.key->ecc, ECC_SECP224R1);
 		break;
 	case SIG_ALGO_ECC_SECP256R1:
-		ret = gen_ecc_key(&key->ecc, ECC_SECP256R1);
+		ret = gen_ecc_key(&key.key->ecc, ECC_SECP256R1);
 		break;
 	case SIG_ALGO_ECC_SECP384R1:
-		ret = gen_ecc_key(&key->ecc, ECC_SECP384R1);
+		ret = gen_ecc_key(&key.key->ecc, ECC_SECP384R1);
 		break;
 	case SIG_ALGO_ECC_SECP521R1:
-		ret = gen_ecc_key(&key->ecc, ECC_SECP521R1);
+		ret = gen_ecc_key(&key.key->ecc, ECC_SECP521R1);
 		break;
 	case SIG_ALGO_ED25519:
-		ret = gen_ed25519_key(&key->ed25519);
+		ret = gen_ed25519_key(&key.key->ed25519);
 		break;
 	case SIG_ALGO_ED448:
-		ret = gen_ed448_key(&key->ed448);
+		ret = gen_ed448_key(&key.key->ed448);
 		break;
 	case SIG_ALGO_MLDSA_44:
-		ret = gen_mldsa_key(&key->mldsa, WC_ML_DSA_44);
+		ret = gen_mldsa_key(&key.key->mldsa, WC_ML_DSA_44);
 		break;
 	case SIG_ALGO_MLDSA_65:
-		ret = gen_mldsa_key(&key->mldsa, WC_ML_DSA_65);
+		ret = gen_mldsa_key(&key.key->mldsa, WC_ML_DSA_65);
 		break;
 	case SIG_ALGO_MLDSA_87:
-		ret = gen_mldsa_key(&key->mldsa, WC_ML_DSA_87);
+		ret = gen_mldsa_key(&key.key->mldsa, WC_ML_DSA_87);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE128S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE128S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE128S);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE128F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE128F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE128F);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE192S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE192S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE192S);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE192F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE192F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE192F);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE256S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE256S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE256S);
 		break;
 	case SIG_ALGO_SLHDSA_SHAKE256F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHAKE256F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHAKE256F);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_128S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_128S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_128S);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_128F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_128F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_128F);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_192S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_192S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_192S);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_192F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_192F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_192F);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_256S:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_256S);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_256S);
 		break;
 	case SIG_ALGO_SLHDSA_SHA2_256F:
-		ret = gen_slhdsa_key(&key->slhdsa, SLHDSA_SHA2_256F);
+		ret = gen_slhdsa_key(&key.key->slhdsa, SLHDSA_SHA2_256F);
 		break;
 	case SIG_ALGO_FALCON_512:
-		ret = gen_falcon_key(&key->falcon, FALCON_LEVEL1);
+		ret = gen_falcon_key(&key.key->falcon, FALCON_LEVEL1);
 		break;
 	case SIG_ALGO_FALCON_1024:
-		ret = gen_falcon_key(&key->falcon, FALCON_LEVEL5);
+		ret = gen_falcon_key(&key.key->falcon, FALCON_LEVEL5);
 		break;
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
@@ -664,39 +664,41 @@ int gen_key_der(int sig_algo_type, unsigned char *der, int *der_sz)
 	return ret;
 }
 
-union KeyUni *gen_key_create(int sig_algo_type)
+struct KeyUni gen_key_create(int sig_algo_type)
 {
-	union KeyUni *key = malloc(sizeof(*key));
+	struct KeyUni key;
+	key.type = sig_algo_type;
+	key.key = malloc(sizeof(*key.key));
 	return key;
 }
 
-void gen_key_free(int sig_algo_type, union KeyUni *key)
+void gen_key_free(struct KeyUni key)
 {
-	switch (sig_algo_type) {
+	switch (key.type) {
 	case SIG_ALGO_RSA:
 	case SIG_ALGO_RSA_2048:
 	case SIG_ALGO_RSA_4096:
 	case SIG_ALGO_RSA_8192:
-		wc_FreeRsaKey(&key->rsa);
+		wc_FreeRsaKey(&key.key->rsa);
 		break;
 	case SIG_ALGO_ECC:
 	case SIG_ALGO_ECC_SECP224R1:
 	case SIG_ALGO_ECC_SECP256R1:
 	case SIG_ALGO_ECC_SECP384R1:
 	case SIG_ALGO_ECC_SECP521R1:
-		wc_ecc_free(&key->ecc);
+		wc_ecc_free(&key.key->ecc);
 		break;
 	case SIG_ALGO_ED25519:
-		wc_ed25519_free(&key->ed25519);
+		wc_ed25519_free(&key.key->ed25519);
 		break;
 	case SIG_ALGO_ED448:
-		wc_ed448_free(&key->ed448);
+		wc_ed448_free(&key.key->ed448);
 		break;
 	case SIG_ALGO_MLDSA:
 	case SIG_ALGO_MLDSA_44:
 	case SIG_ALGO_MLDSA_65:
 	case SIG_ALGO_MLDSA_87:
-		wc_MlDsaKey_Free(&key->mldsa);
+		wc_MlDsaKey_Free(&key.key->mldsa);
 		break;
 	case SIG_ALGO_SLHDSA:
 	case SIG_ALGO_SLHDSA_SHAKE128S:
@@ -711,17 +713,15 @@ void gen_key_free(int sig_algo_type, union KeyUni *key)
 	case SIG_ALGO_SLHDSA_SHA2_192F:
 	case SIG_ALGO_SLHDSA_SHA2_256S:
 	case SIG_ALGO_SLHDSA_SHA2_256F:
-		wc_SlhDsaKey_Free(&key->slhdsa);
+		wc_SlhDsaKey_Free(&key.key->slhdsa);
 		break;
 	case SIG_ALGO_FALCON:
 	case SIG_ALGO_FALCON_512:
 	case SIG_ALGO_FALCON_1024:
-		wc_falcon_free(&key->falcon);
+		wc_falcon_free(&key.key->falcon);
 		break;
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
 		abort();
 	}
-
-	free(key);
 }

@@ -1,13 +1,18 @@
 #ifndef GEN_KEY_H
 #define GEN_KEY_H
 
-union KeyUni;
+union key_impl;
+
+struct KeyUni {
+	int type;
+	union key_impl *key;
+};
 
 int get_key_type_from_str(const char *str);
-int gen_key(int sig_algo_type, union KeyUni *key);
+int gen_key(struct KeyUni key);
 int gen_key_der(int sig_algo_type, unsigned char *der, int *der_sz);
 
-union KeyUni *gen_key_create(int sig_algo_type);
-void gen_key_free(int sig_algo_type, union KeyUni *key);
+struct KeyUni gen_key_create(int sig_algo_type);
+void gen_key_free(struct KeyUni key);
 
 #endif // GEN_KEY_H

@@ -68,7 +68,7 @@ static int sig_algo_to_ctc(int sig_algo_type)
 	}
 }
 
-Cert *cert_create(int key_type, const char **dns_entries, int dns_entries_sz,
+Cert *cert_create(int cert_type, const char **dns_entries, int dns_entries_sz,
 		  const unsigned char (*ip_entries)[4], int ip_entries_sz,
 		  const char *unit_name, const char *cn_name, int is_ca,
 		  int pathlen)
@@ -117,7 +117,7 @@ Cert *cert_create(int key_type, const char **dns_entries, int dns_entries_sz,
 	}
 
 	cert->isCA = is_ca;
-	cert->sigType = sig_algo_to_ctc(key_type);
+	cert->sigType = sig_algo_to_ctc(cert_type);
 	if (pathlen != -1) {
 		cert->pathLenSet = 1;
 		cert->pathLen = pathlen;
@@ -158,9 +158,9 @@ void cert_free(Cert *cert)
 	free(cert);
 }
 
-int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
-	     unsigned char *issuer_der, int issuer_sz, union KeyUni *sub_key,
-	     union KeyUni *root_key)
+int cert_gen(Cert *cert, unsigned char *der, int *der_sz,
+	     unsigned char *issuer_der, int issuer_sz, struct KeyUni sub_key,
+	     struct KeyUni root_key)
 {
 	int ret;
 	int der_buf_sz = *der_sz;
@@ -174,7 +174,8 @@ int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
 	}
 
 	if ((ret = wc_SetSubjectKeyIdFromPublicKey_ex(
-		     cert, get_wc_key_type(key_type), sub_key)) != WC_SUCCESS) {
+		     cert, get_wc_key_type(sub_key.type), sub_key.key)) !=
+	    WC_SUCCESS) {
 		fprintf(stderr,
 			"failed to set subject key id."
 			"err = %d, %s\n",
@@ -183,9 +184,9 @@ int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
 		goto err;
 	}
 
-	if ((ret = wc_SetAuthKeyIdFromPublicKey_ex(cert,
-						   get_wc_key_type(key_type),
-						   root_key)) != WC_SUCCESS) {
+	if ((ret = wc_SetAuthKeyIdFromPublicKey_ex(
+		     cert, get_wc_key_type(root_key.type), root_key.key)) !=
+	    WC_SUCCESS) {
 		fprintf(stderr,
 			"failed to set auth key id."
 			"err = %d, %s\n",
@@ -195,8 +196,8 @@ int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
 	}
 
 	if ((*der_sz = wc_MakeCert_ex(cert, der, *der_sz,
-				      get_wc_key_type(key_type), sub_key,
-				      g_rng)) < 0) {
+				      get_wc_key_type(sub_key.type),
+				      sub_key.key, g_rng)) < 0) {
 		ret = *der_sz;
 		fprintf(stderr,
 			"failed to make certificate. "
@@ -207,8 +208,9 @@ int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
 	}
 
 	if ((*der_sz = wc_SignCert_ex(
-		     cert->bodySz, sig_algo_to_ctc(key_type), der, der_buf_sz,
-		     get_wc_key_type(key_type), root_key, g_rng)) < 0) {
+		     cert->bodySz, sig_algo_to_ctc(root_key.type), der,
+		     der_buf_sz, get_wc_key_type(root_key.type), root_key.key,
+		     g_rng)) < 0) {
 		ret = *der_sz;
 		fprintf(stderr,
 			"failed to sign certificate. "
@@ -222,105 +224,3 @@ int cert_gen(Cert *cert, int key_type, unsigned char *der, int *der_sz,
 err:
 	return ret;
 }
-/*
-int cert_gen_root(int key_type, const char **dns_entries, int dns_entries_sz,
-		  const unsigned char (*ip_entries)[4], int ip_entries_sz,
-		  const char *unit_name, unsigned char *der, int *der_sz,
-		  union KeyUni **out_key)
-{
-	int ret;
-	Cert cert;
-	int der_buf_sz = *der_sz;
-
-	if ((ret = sig_algo_init()) != CODE_OK) {
-		fprintf(stderr, "failed to init \n");
-		ret = CODE_ERROR;
-		goto err;
-	}
-	if ((ret = wc_InitCert(&cert)) != WC_SUCCESS) {
-		fprintf(stderr, "failed to init cert\n");
-		ret = CODE_ERROR;
-		goto err;
-	}
-	DNS_entry *alt_entres = NULL;
-
-	for (int i = 0; i < dns_entries_sz; i++) {
-		int str_sz = strlen(*(dns_entries + i));
-		if (wc_SetDNSEntry(NULL, *(dns_entries + i), str_sz,
-				   ASN_DNS_TYPE, &alt_entres) != WC_SUCCESS) {
-			ret = CODE_ERROR;
-			goto err;
-		}
-	}
-	for (int i = 0; i < ip_entries_sz; i++) {
-		if (wc_SetDNSEntry(NULL, (const char *)*(ip_entries + i), 4,
-				   ASN_IP_TYPE, &alt_entres) != WC_SUCCESS) {
-			ret = CODE_ERROR;
-			goto err;
-		}
-	}
-
-	if (alt_entres != NULL)
-		wc_SetAltNamesFromList(&cert, alt_entres);
-
-	FreeAltNames(alt_entres, NULL);
-
-	cert.isCA = 1;
-	cert.sigType = sig_algo_to_ctc(key_type);
-	cert.basicConstCrit = 1;
-	cert.pathLenSet = 1;
-	cert.pathLen = 1;
-
-	if ((ret = wc_SetKeyUsage(&cert, "keyCertSign")) != WC_SUCCESS) {
-		fprintf(stderr, "failed to set key usage ext. ");
-		ret = CODE_ERROR;
-		goto err;
-	}
-
-	strncpy(cert.subject.country, "PL", CTC_NAME_SIZE);
-	strncpy(cert.subject.locality, "Warsaw", CTC_NAME_SIZE);
-	strncpy(cert.subject.org, "Home Lab", CTC_NAME_SIZE);
-	strncpy(cert.subject.unit, unit_name, CTC_NAME_SIZE);
-	strncpy(cert.subject.commonName, "root", CTC_NAME_SIZE);
-
-	union KeyUni *key = gen_key_create(key_type);
-
-	if ((ret = gen_key(key_type, key)) != CODE_OK) {
-		fprintf(stderr, "failed to generate key. ");
-		ret = CODE_ERROR;
-		goto err;
-	}
-
-	if ((*der_sz = wc_MakeCert_ex(&cert, der, *der_sz,
-				      get_wc_key_type(key_type), key, g_rng)) <
-	    0) {
-		ret = *der_sz;
-		fprintf(stderr,
-			"failed to make certificate. "
-			"err = %d, %s\n",
-			ret, wc_GetErrorString(ret));
-		ret = CODE_ERROR;
-		goto err_2;
-	}
-
-	if ((*der_sz = wc_SignCert_ex(
-		     cert.bodySz, sig_algo_to_ctc(key_type), der, der_buf_sz,
-		     get_wc_key_type(key_type), key, g_rng)) < 0) {
-		ret = *der_sz;
-		fprintf(stderr,
-			"failed to sign certificate. "
-			"err = %d, %s\n",
-			ret, wc_GetErrorString(ret));
-		ret = CODE_ERROR;
-		goto err_2;
-	}
-
-	ret = CODE_OK;
-	*out_key = key;
-err_2:
-	//gen_key_free(key_type, key);
-err:
-	sig_algo_cleanup();
-	return ret;
-}
-*/
