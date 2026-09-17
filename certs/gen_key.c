@@ -12,6 +12,7 @@
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/ed25519.h>
 #include <wolfssl/wolfcrypt/ed448.h>
+#include <wolfssl/wolfcrypt/wc_mlkem.h>
 #include <wolfssl/wolfcrypt/asn.h>
 
 #include "codes.h"
@@ -25,7 +26,43 @@ union key_impl {
 	wc_MlDsaKey mldsa;
 	SlhDsaKey slhdsa;
 	falcon_key falcon;
+	MlKemKey mlkem;
 } key;
+
+static int gen_mlkem_key(MlKemKey *gen_key, int level)
+{
+	int ret;
+
+	if ((ret = wc_MlKemKey_Init(gen_key, level, NULL, 0)) != WC_SUCCESS) {
+		fprintf(stderr,
+			"failed to initialise MlKemKey struct. "
+			"err = %d, %s\n",
+			ret, wc_GetErrorString(ret));
+		return CODE_ERROR;
+	}
+
+	if ((ret = wc_MlKemKey_MakeKey(gen_key, g_rng)) != WC_SUCCESS) {
+		fprintf(stderr,
+			"failed to make ML-KEM key. "
+			"err = %d, %s\n",
+			ret, wc_GetErrorString(ret));
+		ret = CODE_ERROR;
+		goto err_free_falcon;
+	}
+
+	ret = CODE_OK;
+	return ret;
+
+err_free_falcon:
+	wc_MlKemKey_Free(gen_key);
+	return ret;
+}
+
+static int gen_mlkem_key_der(unsigned char *der, int *der_sz, int level)
+{
+	fprintf(stderr, "%s. Not yet implemented.\n", __func__);
+	abort();
+}
 
 static int gen_falcon_key(falcon_key *gen_key, int level)
 {
@@ -565,6 +602,15 @@ int gen_key(struct KeyUni key)
 	case SIG_ALGO_FALCON_1024:
 		ret = gen_falcon_key(&key.key->falcon, FALCON_LEVEL5);
 		break;
+	case SIG_ALGO_MLKEM_512:
+		ret = gen_mlkem_key(&key.key->mlkem, WC_ML_KEM_512);
+		break;
+	case SIG_ALGO_MLKEM_768:
+		ret = gen_mlkem_key(&key.key->mlkem, WC_ML_KEM_768);
+		break;
+	case SIG_ALGO_MLKEM_1024:
+		ret = gen_mlkem_key(&key.key->mlkem, WC_ML_KEM_1024);
+		break;
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
 		abort();
@@ -720,6 +766,11 @@ void gen_key_free(struct KeyUni key)
 	case SIG_ALGO_FALCON_1024:
 		wc_falcon_free(&key.key->falcon);
 		break;
+	case SIG_ALGO_MLKEM:
+	case SIG_ALGO_MLKEM_512:
+	case SIG_ALGO_MLKEM_768:
+	case SIG_ALGO_MLKEM_1024:
+		wc_MlKemKey_Free(&key.key->mlkem);
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
 		abort();
