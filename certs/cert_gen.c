@@ -133,13 +133,6 @@ Cert *cert_create(int cert_type, const char **dns_entries, int dns_entries_sz,
 	strncpy(cert->subject.unit, unit_name, CTC_NAME_SIZE);
 	strncpy(cert->subject.commonName, cn_name, CTC_NAME_SIZE);
 
-	if (cert->isCA &&
-	    (ret = wc_SetKeyUsage(cert, "keyCertSign")) != WC_SUCCESS) {
-		fprintf(stderr, "failed to set key usage ext\n");
-		ret = CODE_ERROR;
-		goto err2;
-	}
-
 	ret = CODE_OK;
 err2:
 	if (alt_entres != NULL)
@@ -165,6 +158,8 @@ int cert_gen(Cert *cert, unsigned char *der, int *der_sz,
 	int ret;
 	int der_buf_sz = *der_sz;
 
+	const char *usage = NULL;
+
 	if (issuer_der != NULL &&
 	    (ret = wc_SetIssuerBuffer(cert, issuer_der, issuer_sz)) !=
 		    WC_SUCCESS) {
@@ -189,6 +184,30 @@ int cert_gen(Cert *cert, unsigned char *der, int *der_sz,
 	    WC_SUCCESS) {
 		fprintf(stderr,
 			"failed to set auth key id."
+			"err = %d, %s\n",
+			ret, wc_GetErrorString(ret));
+		ret = CODE_ERROR;
+		goto err;
+	}
+
+	if (cert->isCA) {
+		usage = "keyCertSign";
+	} else {
+		switch (sub_key.type) {
+		case SIG_ALGO_MLKEM_512:
+		case SIG_ALGO_MLKEM_768:
+		case SIG_ALGO_MLKEM_1024:
+			usage = "keyEncipherment";
+			break;
+		default:
+			usage = "digitalSignature";
+			break;
+		}
+	}
+
+	if ((ret = wc_SetKeyUsage(cert, usage)) != WC_SUCCESS) {
+		fprintf(stderr,
+			"failed to set key usage."
 			"err = %d, %s\n",
 			ret, wc_GetErrorString(ret));
 		ret = CODE_ERROR;

@@ -22,8 +22,8 @@ int main()
 		return ret;
 	}
 
-	int algo = SIG_ALGO_ECC_SECP256R1;
-	int root_algo = SIG_ALGO_FALCON_512;
+	int algo = SIG_ALGO_MLKEM_512;
+	int root_algo = SIG_ALGO_ED25519;
 
 	struct KeyUni key_root = gen_key_create(root_algo);
 	if ((ret = gen_key(key_root)) != CODE_OK) {
@@ -48,7 +48,7 @@ int main()
 	}
 
 	Cert *serv_cert;
-	if ((serv_cert = cert_create(algo, NULL, 0, NULL, 0, "MA thesis",
+	if ((serv_cert = cert_create(root_algo, NULL, 0, NULL, 0, "MA thesis",
 				     "Server", 0, -1)) == NULL) {
 		fprintf(stderr, "failed to create serv certificate\n");
 		ret = CODE_ERROR;

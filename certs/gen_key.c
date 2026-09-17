@@ -771,6 +771,7 @@ void gen_key_free(struct KeyUni key)
 	case SIG_ALGO_MLKEM_768:
 	case SIG_ALGO_MLKEM_1024:
 		wc_MlKemKey_Free(&key.key->mlkem);
+		break;
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
 		abort();

@@ -5,6 +5,7 @@
 #include "codes.h"
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
+#include <wolfssl/wolfcrypt/oid_sum.h>
 
 WC_RNG *g_rng;
 
@@ -99,6 +100,10 @@ int get_key_type_from_str(const char *str)
         else get_key_type_helper(SIG_ALGO_FALCON_512); 
         else get_key_type_helper(SIG_ALGO_FALCON_1024); 
 
+        else get_key_type_helper(SIG_ALGO_MLKEM_512); 
+        else get_key_type_helper(SIG_ALGO_MLKEM_768); 
+        else get_key_type_helper(SIG_ALGO_MLKEM_1024); 
+
         else return CODE_ERROR;
         //clang-format on
 }
@@ -155,6 +160,11 @@ int get_wc_key_type(int sig_algo_type)
 		return FALCON_LEVEL1_TYPE;
 	case SIG_ALGO_FALCON_1024:
 		return FALCON_LEVEL5_TYPE;
+	case SIG_ALGO_MLKEM_512:
+	case SIG_ALGO_MLKEM_768:
+	case SIG_ALGO_MLKEM_1024:
+		return MLKEM_TYPE;
+               
 	default:
 		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
 		abort();
