@@ -34,10 +34,21 @@ int main(int argc, char **argv)
 		fprintf(stderr, "failed to initialise gen_key\n");
 		return CODE_ERROR;
 	}
+	struct KeyUni key = gen_key_create(key_type);
+	if (key.key == NULL) {
+		fprintf(stderr, "failed to allocate memory for key\n");
+		return CODE_ERROR;
+	}
+
+	if ((ret = gen_key(key)) != CODE_OK) {
+		fprintf(stderr, "failed to initialise gen_key\n");
+		return CODE_ERROR;
+	}
 
 	buf_sz = BUF_SZ;
-	if ((ret = gen_key_der(key_type, buf, &buf_sz)) != CODE_OK) {
+	if ((ret = key_to_der(key, buf, &buf_sz)) != CODE_OK) {
 		fprintf(stderr, "failed to generate key\n");
+		ret = CODE_ERROR;
 		goto error;
 	}
 

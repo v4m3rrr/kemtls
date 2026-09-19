@@ -12,6 +12,8 @@ int main()
 	int der_sz = 10000;
 	unsigned char der_root[10000];
 	int der_root_sz = 10000;
+	unsigned char der_key[10000];
+	int der_key_sz = 10000;
 
 	const char *dns_entries[] = { "raspberrypi.local" };
 	const unsigned char ip_entries[][4] = { { 192, 168, 1, 100 },
@@ -62,6 +64,11 @@ int main()
 		goto err4;
 	}
 
+	if ((ret = key_to_der(key_sub, der_key, &der_key_sz)) != CODE_OK) {
+		fprintf(stderr, "failed to convert sub key to der\n");
+		goto err5;
+	}
+
 	if ((ret = cert_gen(serv_cert, der, &der_sz, der_root, der_root_sz,
 			    key_sub, key_root)) != CODE_OK) {
 		fprintf(stderr, "failed to generate serv certificate\n");
@@ -78,6 +85,11 @@ int main()
 	fd = fopen("cert_root.der", "w");
 
 	fwrite(der_root, sizeof(*der_root), der_root_sz, fd);
+	fclose(fd);
+
+	fd = fopen("server.der", "w");
+
+	fwrite(der_key, sizeof(*der_key), der_key_sz, fd);
 	fclose(fd);
 err5:
 	gen_key_free(key_sub);

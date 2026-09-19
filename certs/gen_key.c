@@ -718,6 +718,77 @@ struct KeyUni gen_key_create(int sig_algo_type)
 	return key;
 }
 
+int key_to_der(struct KeyUni key, unsigned char *der, int *der_sz)
+{
+	switch (key.type) {
+	case SIG_ALGO_RSA:
+	case SIG_ALGO_RSA_2048:
+	case SIG_ALGO_RSA_4096:
+	case SIG_ALGO_RSA_8192:
+		*der_sz = wc_RsaKeyToDer(&key.key->rsa, der, *der_sz);
+		break;
+	case SIG_ALGO_ECC:
+	case SIG_ALGO_ECC_SECP224R1:
+	case SIG_ALGO_ECC_SECP256R1:
+	case SIG_ALGO_ECC_SECP384R1:
+	case SIG_ALGO_ECC_SECP521R1:
+		*der_sz = wc_EccKeyToDer(&key.key->ecc, der, *der_sz);
+		break;
+	case SIG_ALGO_ED25519:
+		*der_sz = wc_Ed25519PrivateKeyToDer(&key.key->ed25519, der,
+						    *der_sz);
+		break;
+	case SIG_ALGO_ED448:
+		*der_sz =
+			wc_Ed448PrivateKeyToDer(&key.key->ed448, der, *der_sz);
+		break;
+	case SIG_ALGO_MLDSA:
+	case SIG_ALGO_MLDSA_44:
+	case SIG_ALGO_MLDSA_65:
+	case SIG_ALGO_MLDSA_87:
+		*der_sz = wc_MlDsaKey_PrivateKeyToDer(&key.key->mldsa, der,
+						      *der_sz);
+		break;
+	case SIG_ALGO_SLHDSA:
+	case SIG_ALGO_SLHDSA_SHAKE128S:
+	case SIG_ALGO_SLHDSA_SHAKE128F:
+	case SIG_ALGO_SLHDSA_SHAKE192S:
+	case SIG_ALGO_SLHDSA_SHAKE192F:
+	case SIG_ALGO_SLHDSA_SHAKE256S:
+	case SIG_ALGO_SLHDSA_SHAKE256F:
+	case SIG_ALGO_SLHDSA_SHA2_128S:
+	case SIG_ALGO_SLHDSA_SHA2_128F:
+	case SIG_ALGO_SLHDSA_SHA2_192S:
+	case SIG_ALGO_SLHDSA_SHA2_192F:
+	case SIG_ALGO_SLHDSA_SHA2_256S:
+	case SIG_ALGO_SLHDSA_SHA2_256F:
+		*der_sz = wc_SlhDsaKey_PrivateKeyToDer(&key.key->slhdsa, der,
+						       *der_sz);
+		break;
+	case SIG_ALGO_FALCON:
+	case SIG_ALGO_FALCON_512:
+	case SIG_ALGO_FALCON_1024:
+		*der_sz = wc_Falcon_PrivateKeyToDer(&key.key->falcon, der,
+						    *der_sz);
+		break;
+	case SIG_ALGO_MLKEM:
+	case SIG_ALGO_MLKEM_512:
+	case SIG_ALGO_MLKEM_768:
+	case SIG_ALGO_MLKEM_1024:
+		*der_sz = wc_MlKemKey_PrivateKeyToDer(&key.key->mlkem, der,
+						      *der_sz);
+		break;
+	default:
+		fprintf(stderr, "Unknown SIG_ALGO. Abort\n");
+		abort();
+	}
+
+	if (*der_sz < 0)
+		return CODE_ERROR;
+
+	return CODE_OK;
+}
+
 void gen_key_free(struct KeyUni key)
 {
 	switch (key.type) {

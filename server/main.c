@@ -94,17 +94,18 @@ int main(int argc, char **argv)
 	wolfSSL_CTX_set_options(
 		ctx, WOLFSSL_OP_NO_RENEGOTIATION |
 			     WOLFSSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+	wolfSSL_CTX_no_ticket_TLSv13(ctx);
 
-	if (wolfSSL_CTX_use_certificate_file(ctx, "./server.pem",
-					     WOLFSSL_FILETYPE_PEM) !=
+	if (wolfSSL_CTX_use_certificate_file(ctx, "./cert.der",
+					     WOLFSSL_FILETYPE_ASN1) !=
 	    WOLFSSL_SUCCESS) {
 		fprintf(stderr, "Failed to load certificate file\n");
 		ret = -1;
 		goto error_wolf_ctx;
 	}
 
-	if (wolfSSL_CTX_use_PrivateKey_file(ctx, "./server.key",
-					    WOLFSSL_FILETYPE_PEM) !=
+	if (wolfSSL_CTX_use_PrivateKey_file(ctx, "./server.der",
+					    WOLFSSL_FILETYPE_ASN1) !=
 	    WOLFSSL_SUCCESS) {
 		fprintf(stderr, "Failed to load private key file\n");
 		ret = -1;
