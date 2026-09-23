@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	// TODO Change to SSL_VERIFY_PEER and load_verify_locations
 	wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_NONE, NULL);
-	wolfSSL_CTX_set_session_cache_mode(ctx, WOLFSSL_SESS_CACHE_OFF);
+	//wolfSSL_CTX_set_session_cache_mode(ctx, WOLFSSL_SESS_CACHE_OFF);
 	wolfSSL_CTX_set_cipher_list(ctx, TLS13_CIPHER_SUIT);
 	wolfSSL_CTX_set_options(
 		ctx, WOLFSSL_OP_NO_RENEGOTIATION |
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 		goto error_wolf_obj;
 	}
 */
-	if ((ret = wolfSSL_connect(ssl)) != WOLFSSL_SUCCESS) {
+	if ((ret = wolfSSL_connect_kemTLS(ssl)) != WOLFSSL_SUCCESS) {
 		err = wolfSSL_get_error(ssl, ret);
 		fprintf(stderr,
 			"Failed to accept connection."
